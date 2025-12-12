@@ -11,73 +11,43 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42;
+namespace Plugin\ProductReview44;
 
 use Eccube\Entity\Product;
 use Eccube\Event\TemplateEvent;
 use Eccube\Repository\Master\ProductStatusRepository;
-use Plugin\ProductReview42\Entity\ProductReviewStatus;
-use Plugin\ProductReview42\Repository\ProductReviewConfigRepository;
-use Plugin\ProductReview42\Repository\ProductReviewRepository;
+use Plugin\ProductReview44\Entity\ProductReviewStatus;
+use Plugin\ProductReview44\Repository\ProductReviewConfigRepository;
+use Plugin\ProductReview44\Repository\ProductReviewRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ProductReviewEvent implements EventSubscriberInterface
 {
     /**
-     * @var ProductReviewConfigRepository
-     */
-    protected $productReviewConfigRepository;
-    
-    /**
-     * @var ProductStatusRepository
-     */
-    protected $productStatusRepository;
-
-    /**
-     * @var ProductReviewRepository
-     */
-    protected $productReviewRepository;
-
-    /**
      * ProductReview constructor.
-     *
-     * @param ProductReviewConfigRepository $productReviewConfigRepository
-     * @param ProductStatusRepository $productStatusRepository
-     * @param ProductReviewRepository $productReviewRepository
      */
-    public function __construct(
-        ProductReviewConfigRepository $productReviewConfigRepository,
-        ProductStatusRepository $productStatusRepository,
-        ProductReviewRepository $productReviewRepository
-    ) {
-        $this->productReviewConfigRepository = $productReviewConfigRepository;
-        $this->productStatusRepository = $productStatusRepository;
-        $this->productReviewRepository = $productReviewRepository;
+    public function __construct(protected ProductReviewConfigRepository $productReviewConfigRepository, protected ProductStatusRepository $productStatusRepository, protected ProductReviewRepository $productReviewRepository)
+    {
     }
 
-    /**
-     * @return array
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'Product/detail.twig' => 'detail',
         ];
     }
 
-    /**
-     * @param TemplateEvent $event
-     */
-    public function detail(TemplateEvent $event)
+    public function detail(TemplateEvent $event): void
     {
-        $event->addSnippet('ProductReview42/Resource/template/default/review.twig');
+        $event->addSnippet('ProductReview44/Resource/template/default/review.twig');
 
         $Config = $this->productReviewConfigRepository->get();
 
         /** @var Product $Product */
         $Product = $event->getParameter('Product');
 
-        $ProductReviews = $this->productReviewRepository->findBy(['Status' => ProductReviewStatus::SHOW, 'Product' => $Product], ['id' => 'DESC'], $Config->getReviewMax());
+        $reviewMax = $Config?->getReviewMax() ?? 5;
+        $ProductReviews = $this->productReviewRepository->findBy(['Status' => ProductReviewStatus::SHOW, 'Product' => $Product], ['id' => 'DESC'], $reviewMax);
 
         $rate = $this->productReviewRepository->getAvgAll($Product);
         $avg = round($rate['recommend_avg']);

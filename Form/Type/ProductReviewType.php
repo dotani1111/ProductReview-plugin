@@ -11,7 +11,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Form\Type;
+namespace Plugin\ProductReview44\Form\Type;
 
 use Eccube\Common\EccubeConfig;
 use Eccube\Form\Type\Master\SexType;
@@ -29,25 +29,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProductReviewType extends AbstractType
 {
     /**
-     * @var EccubeConfig
-     */
-    protected $eccubeConfig;
-
-    /**
      * ProductReviewType constructor.
-     *
-     * @param EccubeConfig $eccubeConfig
      */
-    public function __construct(EccubeConfig $eccubeConfig)
+    public function __construct(protected EccubeConfig $eccubeConfig)
     {
-        $this->eccubeConfig = $eccubeConfig;
     }
 
     /**
      * build form.
-     *
-     * @param FormBuilderInterface $builder
-     * @param array                $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {

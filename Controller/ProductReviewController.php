@@ -11,22 +11,22 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Controller;
+namespace Plugin\ProductReview44\Controller;
 
 use Eccube\Controller\AbstractController;
+use Eccube\Entity\Customer;
 use Eccube\Entity\Master\ProductStatus;
 use Eccube\Entity\Product;
-use Plugin\ProductReview42\Entity\ProductReview;
-use Plugin\ProductReview42\Entity\ProductReviewStatus;
-use Plugin\ProductReview42\Form\Type\ProductReviewType;
-use Plugin\ProductReview42\Repository\ProductReviewRepository;
-use Plugin\ProductReview42\Repository\ProductReviewStatusRepository;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Plugin\ProductReview44\Entity\ProductReview;
+use Plugin\ProductReview44\Entity\ProductReviewStatus;
+use Plugin\ProductReview44\Form\Type\ProductReviewType;
+use Plugin\ProductReview44\Repository\ProductReviewStatusRepository;
+use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Class ProductReviewController front.
@@ -34,38 +34,17 @@ use Symfony\Component\Routing\Annotation\Route;
 class ProductReviewController extends AbstractController
 {
     /**
-     * @var ProductReviewStatusRepository
-     */
-    private $productReviewStatusRepository;
-
-    /**
-     * @var ProductReviewRepository
-     */
-    private $productReviewRepository;
-
-    /**
      * ProductReviewController constructor.
-     *
-     * @param ProductReviewStatusRepository $productStatusRepository
-     * @param ProductReviewRepository $productReviewRepository
      */
-    public function __construct(
-        ProductReviewStatusRepository $productStatusRepository,
-        ProductReviewRepository $productReviewRepository
-    ) {
-        $this->productReviewStatusRepository = $productStatusRepository;
-        $this->productReviewRepository = $productReviewRepository;
+    public function __construct(private readonly ProductReviewStatusRepository $productReviewStatusRepository)
+    {
     }
 
     /**
-     * @Route("/product_review/{id}/review", name="product_review_index", requirements={"id" = "\d+"})
-     * @Route("/product_review/{id}/review", name="product_review_confirm", requirements={"id" = "\d+"})
-     *
-     * @param Request $request
-     * @param Product $Product
-     *
      * @return RedirectResponse|Response
      */
+    #[Route(path: '/product_review/{id}/review', name: 'product_review_index', requirements: ['id' => '\d+'])]
+    #[Route(path: '/product_review/{id}/review', name: 'product_review_confirm', requirements: ['id' => '\d+'])]
     public function index(Request $request, Product $Product)
     {
         if (!$this->session->has('_security_admin') && $Product->getStatus()->getId() !== ProductStatus::DISPLAY_SHOW) {
@@ -79,35 +58,38 @@ class ProductReviewController extends AbstractController
 
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var $ProductReview ProductReview */
+            /** @var ProductReview $ProductReview */
             $ProductReview = $form->getData();
 
             switch ($request->get('mode')) {
                 case 'confirm':
                     log_info('Product review config confirm');
 
-                    return $this->render('ProductReview42/Resource/template/default/confirm.twig', [
+                    return $this->render('@ProductReview44/default/confirm.twig', [
                         'form' => $form->createView(),
                         'Product' => $Product,
                         'ProductReview' => $ProductReview,
                     ]);
-                    break;
 
                 case 'complete':
                     log_info('Product review complete');
                     if ($this->isGranted('ROLE_USER')) {
                         $Customer = $this->getUser();
-                        $ProductReview->setCustomer($Customer);
+                        if ($Customer instanceof Customer) {
+                            $ProductReview->setCustomer($Customer);
+                        }
                     }
                     $ProductReview->setProduct($Product);
-                    $ProductReview->setStatus($this->productReviewStatusRepository->find(ProductReviewStatus::HIDE));
+                    $Status = $this->productReviewStatusRepository->find(ProductReviewStatus::HIDE);
+                    if ($Status instanceof ProductReviewStatus) {
+                        $ProductReview->setStatus($Status);
+                    }
                     $this->entityManager->persist($ProductReview);
-                    $this->entityManager->flush($ProductReview);
+                    $this->entityManager->flush();
 
                     log_info('Product review complete', ['id' => $Product->getId()]);
 
                     return $this->redirectToRoute('product_review_complete', ['id' => $Product->getId()]);
-                    break;
 
                 case 'back':
                     // 確認画面から投稿画面へ戻る
@@ -119,7 +101,7 @@ class ProductReviewController extends AbstractController
             }
         }
 
-        return $this->render('ProductReview42/Resource/template/default/index.twig', [
+        return $this->render('@ProductReview44/default/index.twig', [
             'Product' => $Product,
             'ProductReview' => $ProductReview,
             'form' => $form->createView(),
@@ -129,24 +111,20 @@ class ProductReviewController extends AbstractController
     /**
      * Complete.
      *
-     * @Route("/product_review/{id}/complete", name="product_review_complete", requirements={"id" = "\d+"})
-     * @Template("ProductReview42/Resource/template/default/complete.twig")
-     *
-     * @param $id
-     *
-     * @return array
+     * @return array<string, mixed>
      */
-    public function complete($id)
+    #[Route(path: '/product_review/{id}/complete', name: 'product_review_complete', requirements: ['id' => '\d+'])]
+    #[Template(template: '@ProductReview44/default/complete.twig')]
+    public function complete(int $id): array
     {
         return ['id' => $id];
     }
 
     /**
      * ページ管理表示用のダミールーティング.
-     *
-     * @Route("/product_review/display", name="product_review_display")
      */
-    public function display()
+    #[Route(path: '/product_review/display', name: 'product_review_display')]
+    public function display(): Response
     {
         return new Response();
     }

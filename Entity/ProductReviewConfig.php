@@ -11,68 +11,49 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Entity;
+namespace Plugin\ProductReview44\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Eccube\Entity\AbstractEntity;
 use Eccube\Entity\Master\CsvType;
+use Plugin\ProductReview44\Repository\ProductReviewConfigRepository;
 
 /**
  * ProductReviewConfig
- *
- * @ORM\Table(name="plg_product_review_config")
- * @ORM\Entity(repositoryClass="Plugin\ProductReview42\Repository\ProductReviewConfigRepository")
  */
+#[ORM\Table(name: 'plg_product_review_config')]
+#[ORM\Entity(repositoryClass: ProductReviewConfigRepository::class)]
 class ProductReviewConfig extends AbstractEntity
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer", options={"unsigned":true})
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
-     */
-    private $id;
+    #[ORM\Column(name: 'id', type: Types::INTEGER, options: ['unsigned' => true])]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    private ?int $id = null;
 
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="review_max", type="smallint", nullable=true, options={"unsigned":true, "default":5})
-     */
-    private $review_max;
+    #[ORM\Column(name: 'review_max', type: Types::SMALLINT, nullable: true, options: ['unsigned' => true, 'default' => 5])]
+    private ?int $review_max = null;
 
-    /**
-     * @var \Eccube\Entity\Master\CsvType
-     *
-     * @ORM\ManyToOne(targetEntity="Eccube\Entity\Master\CsvType")
-     * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="csv_type_id", nullable=true, referencedColumnName="id")
-     * })
-     */
-    private $CsvType;
+    #[ORM\JoinColumn(name: 'csv_type_id', nullable: true, referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: CsvType::class)]
+    private ?CsvType $CsvType = null;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="create_date", type="datetimetz")
      */
+    #[ORM\Column(name: 'create_date', type: Types::DATETIMETZ_MUTABLE)]
     private $create_date;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="update_date", type="datetimetz")
      */
+    #[ORM\Column(name: 'update_date', type: Types::DATETIMETZ_MUTABLE)]
     private $update_date;
 
     /**
      * Set product_review config id.
-     *
-     * @param string $id
-     *
-     * @return ProductReviewConfig
      */
-    public function setId($id)
+    public function setId(int $id): ProductReviewConfig
     {
         $this->id = $id;
 
@@ -81,32 +62,24 @@ class ProductReviewConfig extends AbstractEntity
 
     /**
      * Get id.
-     *
-     * @return int
      */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
     /**
      * Get ReviewMax.
-     *
-     * @return int
      */
-    public function getReviewMax()
+    public function getReviewMax(): ?int
     {
         return $this->review_max;
     }
 
     /**
      * Set max.
-     *
-     * @param int $max
-     *
-     * @return ProductReview
      */
-    public function setReviewMax($max)
+    public function setReviewMax(?int $max): ProductReviewConfig
     {
         $this->review_max = $max;
 
@@ -115,10 +88,8 @@ class ProductReviewConfig extends AbstractEntity
 
     /**
      * Get CsvType
-     *
-     * @return \Eccube\Entity\Master\CsvType
      */
-    public function getCsvType()
+    public function getCsvType(): ?CsvType
     {
         return $this->CsvType;
     }
@@ -126,11 +97,9 @@ class ProductReviewConfig extends AbstractEntity
     /**
      * Set CsvType
      *
-     * @param CsvType $CsvType
-     *
      * @return $this
      */
-    public function setCsvType(CsvType $CsvType = null)
+    public function setCsvType(?CsvType $CsvType = null)
     {
         $this->CsvType = $CsvType;
 
@@ -140,11 +109,9 @@ class ProductReviewConfig extends AbstractEntity
     /**
      * Set create_date.
      *
-     * @param \DateTime $createDate
-     *
      * @return $this
      */
-    public function setCreateDate($createDate)
+    public function setCreateDate(\DateTime $createDate)
     {
         $this->create_date = $createDate;
 
@@ -153,10 +120,8 @@ class ProductReviewConfig extends AbstractEntity
 
     /**
      * Get create_date.
-     *
-     * @return \DateTime
      */
-    public function getCreateDate()
+    public function getCreateDate(): \DateTime
     {
         return $this->create_date;
     }
@@ -164,11 +129,9 @@ class ProductReviewConfig extends AbstractEntity
     /**
      * Set update_date.
      *
-     * @param \DateTime $updateDate
-     *
      * @return $this
      */
-    public function setUpdateDate($updateDate)
+    public function setUpdateDate(\DateTime $updateDate)
     {
         $this->update_date = $updateDate;
 
@@ -177,10 +140,8 @@ class ProductReviewConfig extends AbstractEntity
 
     /**
      * Get update_date.
-     *
-     * @return \DateTime
      */
-    public function getUpdateDate()
+    public function getUpdateDate(): \DateTime
     {
         return $this->update_date;
     }

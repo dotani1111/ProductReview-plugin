@@ -11,13 +11,13 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42;
+namespace Plugin\ProductReview44;
 
 use Eccube\Common\EccubeNav;
 
 class ProductReviewNav implements EccubeNav
 {
-    public static function getNav()
+    public static function getNav(): array
     {
         return [
             'product' => [

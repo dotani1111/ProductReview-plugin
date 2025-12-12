@@ -11,148 +11,92 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Entity;
+namespace Plugin\ProductReview44\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Eccube\Entity\AbstractEntity;
 use Eccube\Entity\Customer;
 use Eccube\Entity\Master\Sex;
 use Eccube\Entity\Product;
+use Plugin\ProductReview44\Repository\ProductReviewRepository;
 
 /**
  * ProductReview
- *
- * @ORM\Table(name="plg_product_review")
- * @ORM\Entity(repositoryClass="Plugin\ProductReview42\Repository\ProductReviewRepository")
  */
+#[ORM\Table(name: 'plg_product_review')]
+#[ORM\Entity(repositoryClass: ProductReviewRepository::class)]
 class ProductReview extends AbstractEntity
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer", options={"unsigned":true})
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
-     */
-    private $id;
+    #[ORM\Column(name: 'id', type: Types::INTEGER, options: ['unsigned' => true])]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    /** @phpstan-ignore-next-line */
+    private ?int $id = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="reviewer_name", type="string")
-     */
-    private $reviewer_name;
+    #[ORM\Column(name: 'reviewer_name', type: Types::STRING)]
+    private ?string $reviewer_name = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="reviewer_url", type="text", nullable=true)
-     */
-    private $reviewer_url;
+    #[ORM\Column(name: 'reviewer_url', type: Types::TEXT, nullable: true)]
+    private ?string $reviewer_url = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="title", type="string", length=50)
-     */
-    private $title;
+    #[ORM\Column(name: 'title', type: Types::STRING, length: 50)]
+    private ?string $title = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="comment", type="text")
-     */
-    private $comment;
+    #[ORM\Column(name: 'comment', type: Types::TEXT)]
+    private ?string $comment = null;
 
-    /**
-     * @var Sex
-     *
-     * @ORM\ManyToOne(targetEntity="Eccube\Entity\Master\Sex")
-     * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="sex_id", referencedColumnName="id")
-     * })
-     */
-    private $Sex;
+    #[ORM\JoinColumn(name: 'sex_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: Sex::class)]
+    private ?Sex $Sex = null;
 
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="recommend_level", type="smallint")
-     */
-    private $recommend_level;
+    #[ORM\Column(name: 'recommend_level', type: Types::SMALLINT)]
+    private ?int $recommend_level = null;
 
-    /**
-     * @var Product
-     *
-     * @ORM\ManyToOne(targetEntity="Eccube\Entity\Product")
-     * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="product_id", referencedColumnName="id")
-     * })
-     */
-    private $Product;
+    #[ORM\JoinColumn(name: 'product_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: Product::class)]
+    private ?Product $Product = null;
 
-    /**
-     * @var Customer
-     *
-     * @ORM\ManyToOne(targetEntity="Eccube\Entity\Customer")
-     * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="customer_id", referencedColumnName="id")
-     * })
-     */
-    private $Customer;
+    #[ORM\JoinColumn(name: 'customer_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: Customer::class)]
+    private ?Customer $Customer = null;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="create_date", type="datetimetz")
      */
+    #[ORM\Column(name: 'create_date', type: Types::DATETIMETZ_MUTABLE)]
     private $create_date;
 
     /**
      * @var \DateTime
-     *
-     * @ORM\Column(name="update_date", type="datetimetz")
      */
+    #[ORM\Column(name: 'update_date', type: Types::DATETIMETZ_MUTABLE)]
     private $update_date;
 
-    /**
-     * @var \Plugin\ProductReview42\Entity\ProductReviewStatus
-     *
-     * @ORM\ManyToOne(targetEntity="Plugin\ProductReview42\Entity\ProductReviewStatus")
-     * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="status_id", referencedColumnName="id")
-     * })
-     */
-    private $Status;
+    #[ORM\JoinColumn(name: 'status_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: ProductReviewStatus::class)]
+    private ?ProductReviewStatus $Status = null;
 
     /**
      * Get id.
-     *
-     * @return int
      */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
     /**
      * Get reviewer_name.
-     *
-     * @return string
      */
-    public function getReviewerName()
+    public function getReviewerName(): ?string
     {
         return $this->reviewer_name;
     }
 
     /**
      * Set reviewer_name.
-     *
-     * @param string $reviewer_name
-     *
-     * @return ProductReview
      */
-    public function setReviewerName($reviewer_name)
+    public function setReviewerName(string $reviewer_name): ProductReview
     {
         $this->reviewer_name = $reviewer_name;
 
@@ -161,22 +105,16 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get reviewer_url.
-     *
-     * @return string
      */
-    public function getReviewerUrl()
+    public function getReviewerUrl(): ?string
     {
         return $this->reviewer_url;
     }
 
     /**
      * Set reviewer_url.
-     *
-     * @param string $reviewer_url
-     *
-     * @return ProductReview
      */
-    public function setReviewerUrl($reviewer_url)
+    public function setReviewerUrl(?string $reviewer_url): ProductReview
     {
         $this->reviewer_url = $reviewer_url;
 
@@ -185,22 +123,16 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get recommend_level.
-     *
-     * @return int
      */
-    public function getRecommendLevel()
+    public function getRecommendLevel(): ?int
     {
         return $this->recommend_level;
     }
 
     /**
      * Set recommend_level.
-     *
-     * @param int $recommend_level
-     *
-     * @return ProductReview
      */
-    public function setRecommendLevel($recommend_level)
+    public function setRecommendLevel(int $recommend_level): ProductReview
     {
         $this->recommend_level = $recommend_level;
 
@@ -209,12 +141,8 @@ class ProductReview extends AbstractEntity
 
     /**
      * Set Sex.
-     *
-     * @param Sex $Sex
-     *
-     * @return ProductReview
      */
-    public function setSex(Sex $Sex = null)
+    public function setSex(?Sex $Sex = null): ProductReview
     {
         $this->Sex = $Sex;
 
@@ -223,32 +151,24 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get Sex.
-     *
-     * @return Sex
      */
-    public function getSex()
+    public function getSex(): ?Sex
     {
         return $this->Sex;
     }
 
     /**
      * Get title.
-     *
-     * @return string
      */
-    public function getTitle()
+    public function getTitle(): ?string
     {
         return $this->title;
     }
 
     /**
      * Set title.
-     *
-     * @param string $title
-     *
-     * @return ProductReview
      */
-    public function setTitle($title)
+    public function setTitle(string $title): ProductReview
     {
         $this->title = $title;
 
@@ -257,22 +177,16 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get comment.
-     *
-     * @return string
      */
-    public function getComment()
+    public function getComment(): ?string
     {
         return $this->comment;
     }
 
     /**
      * Set comment.
-     *
-     * @param string $comment
-     *
-     * @return ProductReview
      */
-    public function setComment($comment)
+    public function setComment(string $comment): ProductReview
     {
         $this->comment = $comment;
 
@@ -281,8 +195,6 @@ class ProductReview extends AbstractEntity
 
     /**
      * Set Product.
-     *
-     * @param Product $Product
      *
      * @return $this
      */
@@ -295,10 +207,8 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get Product.
-     *
-     * @return Product
      */
-    public function getProduct()
+    public function getProduct(): ?Product
     {
         return $this->Product;
     }
@@ -306,11 +216,9 @@ class ProductReview extends AbstractEntity
     /**
      * Set Customer.
      *
-     * @param Customer $Customer
-     *
      * @return $this
      */
-    public function setCustomer(Customer $Customer)
+    public function setCustomer(?Customer $Customer)
     {
         $this->Customer = $Customer;
 
@@ -319,38 +227,30 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get Customer.
-     *
-     * @return Customer
      */
-    public function getCustomer()
+    public function getCustomer(): ?Customer
     {
         return $this->Customer;
     }
 
-    /**
-     * @return \Plugin\ProductReview42\Entity\ProductReviewStatus
-     */
-    public function getStatus()
+    public function getStatus(): ?ProductReviewStatus
     {
         return $this->Status;
     }
 
-    /**
-     * @param \Plugin\ProductReview42\Entity\ProductReviewStatus $status
-     */
-    public function setStatus(\Plugin\ProductReview42\Entity\ProductReviewStatus $Status)
+    public function setStatus(?ProductReviewStatus $Status): self
     {
         $this->Status = $Status;
+
+        return $this;
     }
 
     /**
      * Set create_date.
      *
-     * @param \DateTime $createDate
-     *
      * @return $this
      */
-    public function setCreateDate($createDate)
+    public function setCreateDate(\DateTime $createDate)
     {
         $this->create_date = $createDate;
 
@@ -359,10 +259,8 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get create_date.
-     *
-     * @return \DateTime
      */
-    public function getCreateDate()
+    public function getCreateDate(): \DateTime
     {
         return $this->create_date;
     }
@@ -370,11 +268,9 @@ class ProductReview extends AbstractEntity
     /**
      * Set update_date.
      *
-     * @param \DateTime $updateDate
-     *
      * @return $this
      */
-    public function setUpdateDate($updateDate)
+    public function setUpdateDate(\DateTime $updateDate)
     {
         $this->update_date = $updateDate;
 
@@ -383,10 +279,8 @@ class ProductReview extends AbstractEntity
 
     /**
      * Get update_date.
-     *
-     * @return \DateTime
      */
-    public function getUpdateDate()
+    public function getUpdateDate(): \DateTime
     {
         return $this->update_date;
     }

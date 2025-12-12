@@ -11,7 +11,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42;
+namespace Plugin\ProductReview44;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Eccube\Common\EccubeConfig;
@@ -21,38 +21,42 @@ use Eccube\Entity\Master\CsvType;
 use Eccube\Entity\Page;
 use Eccube\Entity\PageLayout;
 use Eccube\Plugin\AbstractPluginManager;
-use Eccube\Repository\PageRepository;
-use Plugin\ProductReview42\Entity\ProductReviewConfig;
-use Plugin\ProductReview42\Entity\ProductReviewStatus;
+use Plugin\ProductReview44\Entity\ProductReview;
+use Plugin\ProductReview44\Entity\ProductReviewConfig;
+use Plugin\ProductReview44\Entity\ProductReviewStatus;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 class PluginManager extends AbstractPluginManager
 {
-    private $pages = [
+    /**
+     * @var array<int, array<string, string>>
+     */
+    private array $pages = [
         [
             'name' => 'レビューを表示',
             'url' => 'product_review_display',
-            'filename' => 'ProductReview42/Resource/template/default/review',
+            'filename' => 'ProductReview44/Resource/template/default/review',
         ],
         [
             'name' => 'レビューを投稿',
             'url' => 'product_review_index',
-            'filename' => 'ProductReview42/Resource/template/default/index',
+            'filename' => 'ProductReview44/Resource/template/default/index',
         ],
         [
             'name' => 'レビューを投稿(確認)',
             'url' => 'product_review_confirm',
-            'filename' => 'ProductReview42/Resource/template/default/confirm',
+            'filename' => 'ProductReview44/Resource/template/default/confirm',
         ],
         [
             'name' => 'レビューを投稿(完了)',
             'url' => 'product_review_complete',
-            'filename' => 'ProductReview42/Resource/template/default/complete',
+            'filename' => 'ProductReview44/Resource/template/default/complete',
         ],
     ];
 
-    public function enable(array $meta, ContainerInterface $container)
+    #[\Override]
+    public function enable(array $meta, ContainerInterface $container): void
     {
         $em = $container->get('doctrine')->getManager();
 
@@ -69,7 +73,7 @@ class PluginManager extends AbstractPluginManager
             $this->createCsvData($em, $CsvType);
 
             $Config->setCsvType($CsvType);
-            $em->flush($Config);
+            $em->flush();
         }
 
         // ページを追加
@@ -83,7 +87,8 @@ class PluginManager extends AbstractPluginManager
         $this->copyTwigFiles($container);
     }
 
-    public function disable(array $meta, ContainerInterface $container)
+    #[\Override]
+    public function disable(array $meta, ContainerInterface $container): void
     {
         $em = $container->get('doctrine.orm.entity_manager');
 
@@ -93,7 +98,8 @@ class PluginManager extends AbstractPluginManager
         }
     }
 
-    public function uninstall(array $meta, ContainerInterface $container)
+    #[\Override]
+    public function uninstall(array $meta, ContainerInterface $container): void
     {
         $em = $container->get('doctrine')->getManager();
 
@@ -112,14 +118,14 @@ class PluginManager extends AbstractPluginManager
             $this->removeCsvData($em, $CsvType);
 
             $Config->setCsvType(null);
-            $em->flush($Config);
+            $em->flush();
 
             $em->remove($CsvType);
-            $em->flush($CsvType);
+            $em->flush();
         }
     }
 
-    protected function createConfig(EntityManagerInterface $em)
+    protected function createConfig(EntityManagerInterface $em): ProductReviewConfig
     {
         $Config = $em->find(ProductReviewConfig::class, 1);
         if ($Config) {
@@ -129,12 +135,12 @@ class PluginManager extends AbstractPluginManager
         $Config->setReviewMax(5);
 
         $em->persist($Config);
-        $em->flush($Config);
+        $em->flush();
 
         return $Config;
     }
 
-    protected function createStatus(EntityManagerInterface $em)
+    protected function createStatus(EntityManagerInterface $em): void
     {
         $Status = $em->find(ProductReviewStatus::class, 1);
         if ($Status) {
@@ -147,7 +153,7 @@ class PluginManager extends AbstractPluginManager
         $Status->setSortNo(1);
 
         $em->persist($Status);
-        $em->flush($Status);
+        $em->flush();
 
         $Status = new ProductReviewStatus();
         $Status->setId(2);
@@ -155,12 +161,12 @@ class PluginManager extends AbstractPluginManager
         $Status->setSortNo(2);
 
         $em->persist($Status);
-        $em->flush($Status);
+        $em->flush();
     }
 
-    protected function createCsvType(EntityManagerInterface $em)
+    protected function createCsvType(EntityManagerInterface $em): CsvType
     {
-        $result = $em->createQueryBuilder('ct')
+        $result = $em->createQueryBuilder()
             ->select('COALESCE(MAX(ct.id), 0) AS id, COALESCE(MAX(ct.sort_no), 0) AS sort_no')
             ->from(CsvType::class, 'ct')
             ->getQuery()
@@ -175,12 +181,12 @@ class PluginManager extends AbstractPluginManager
             ->setName('商品レビューCSV')
             ->setSortNo($result['sort_no']);
         $em->persist($CsvType);
-        $em->flush($CsvType);
+        $em->flush();
 
         return $CsvType;
     }
 
-    protected function createPage(EntityManagerInterface $em, $name, $url, $filename)
+    protected function createPage(EntityManagerInterface $em, string $name, string $url, string $filename): void
     {
         $Page = new Page();
         $Page->setEditType(Page::EDIT_TYPE_DEFAULT);
@@ -190,7 +196,7 @@ class PluginManager extends AbstractPluginManager
 
         // DB登録
         $em->persist($Page);
-        $em->flush($Page);
+        $em->flush();
         $Layout = $em->find(Layout::class, Layout::DEFAULT_LAYOUT_UNDERLAYER_PAGE);
         $PageLayout = new PageLayout();
         $PageLayout->setPage($Page)
@@ -199,13 +205,13 @@ class PluginManager extends AbstractPluginManager
             ->setLayoutId($Layout->getId())
             ->setSortNo(0);
         $em->persist($PageLayout);
-        $em->flush($PageLayout);
+        $em->flush();
     }
 
-    protected function copyTwigFiles(ContainerInterface $container)
+    protected function copyTwigFiles(ContainerInterface $container): void
     {
         $templatePath = $container->get(EccubeConfig::class)->get('eccube_theme_front_dir')
-            .'/ProductReview42/Resource/template/default';
+            .'/ProductReview44/Resource/template/default';
         $fs = new Filesystem();
         if ($fs->exists($templatePath)) {
             return;
@@ -214,12 +220,12 @@ class PluginManager extends AbstractPluginManager
         $fs->mirror(__DIR__.'/Resource/template/default', $templatePath);
     }
 
-    protected function createCsvData(EntityManagerInterface $em, CsvType $CsvType)
+    protected function createCsvData(EntityManagerInterface $em, CsvType $CsvType): CsvType
     {
         $rank = 1;
         $Csv = new Csv();
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('Product')
             ->setReferenceFieldName('name')
             ->setDispName('商品名')
@@ -230,7 +236,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('Status')
             ->setReferenceFieldName('name')
             ->setDispName('公開・非公開')
@@ -241,7 +247,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('create_date')
             ->setReferenceFieldName('create_date')
             ->setDispName('投稿日')
@@ -252,7 +258,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('reviewer_name')
             ->setReferenceFieldName('reviewer_name')
             ->setDispName('投稿者名')
@@ -263,7 +269,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('reviewer_url')
             ->setReferenceFieldName('reviewer_url')
             ->setDispName('投稿者URL')
@@ -274,7 +280,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('Sex')
             ->setReferenceFieldName('name')
             ->setDispName('性別')
@@ -285,7 +291,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('recommend_level')
             ->setReferenceFieldName('recommend_level')
             ->setDispName('おすすめレベル')
@@ -296,7 +302,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('title')
             ->setReferenceFieldName('title')
             ->setDispName('タイトル')
@@ -307,7 +313,7 @@ class PluginManager extends AbstractPluginManager
         $Csv = new Csv();
         ++$rank;
         $Csv->setCsvType($CsvType)
-            ->setEntityName('Plugin\ProductReview42\Entity\ProductReview')
+            ->setEntityName(ProductReview::class)
             ->setFieldName('comment')
             ->setReferenceFieldName('comment')
             ->setDispName('コメント')
@@ -318,7 +324,7 @@ class PluginManager extends AbstractPluginManager
         return $CsvType;
     }
 
-    protected function removePage(EntityManagerInterface $em, $url)
+    protected function removePage(EntityManagerInterface $em, string $url): void
     {
         $Page = $em->getRepository(Page::class)->findOneBy(['url' => $url]);
 
@@ -327,27 +333,27 @@ class PluginManager extends AbstractPluginManager
         }
         foreach ($Page->getPageLayouts() as $PageLayout) {
             $em->remove($PageLayout);
-            $em->flush($PageLayout);
+            $em->flush();
         }
 
         $em->remove($Page);
-        $em->flush($Page);
+        $em->flush();
     }
 
-    protected function removeTwigFiles(ContainerInterface $container)
+    protected function removeTwigFiles(ContainerInterface $container): void
     {
         $templatePath = $container->get(EccubeConfig::class)->get('eccube_theme_front_dir')
-            .'/ProductReview42';
+            .'/ProductReview44';
         $fs = new Filesystem();
         $fs->remove($templatePath);
     }
 
-    protected function removeCsvData(EntityManagerInterface $em, CsvType $CsvType)
+    protected function removeCsvData(EntityManagerInterface $em, CsvType $CsvType): void
     {
         $CsvData = $em->getRepository(Csv::class)->findBy(['CsvType' => $CsvType]);
         foreach ($CsvData as $Csv) {
             $em->remove($Csv);
-            $em->flush($Csv);
+            $em->flush();
         }
     }
 }

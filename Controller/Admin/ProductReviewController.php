@@ -11,24 +11,24 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Controller\Admin;
+namespace Plugin\ProductReview44\Controller\Admin;
 
 use Eccube\Controller\AbstractController;
 use Eccube\Repository\Master\PageMaxRepository;
 use Eccube\Service\CsvExportService;
 use Eccube\Util\FormUtil;
 use Knp\Component\Pager\PaginatorInterface;
-use Plugin\ProductReview42\Entity\ProductReview;
-use Plugin\ProductReview42\Entity\ProductReviewConfig;
-use Plugin\ProductReview42\Form\Type\Admin\ProductReviewSearchType;
-use Plugin\ProductReview42\Form\Type\Admin\ProductReviewType;
-use Plugin\ProductReview42\Repository\ProductReviewConfigRepository;
-use Plugin\ProductReview42\Repository\ProductReviewRepository;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Plugin\ProductReview44\Entity\ProductReview;
+use Plugin\ProductReview44\Entity\ProductReviewConfig;
+use Plugin\ProductReview44\Form\Type\Admin\ProductReviewSearchType;
+use Plugin\ProductReview44\Form\Type\Admin\ProductReviewType;
+use Plugin\ProductReview44\Repository\ProductReviewConfigRepository;
+use Plugin\ProductReview44\Repository\ProductReviewRepository;
+use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Class ProductReviewController admin.
@@ -36,56 +36,27 @@ use Symfony\Component\Routing\Annotation\Route;
 class ProductReviewController extends AbstractController
 {
     /**
-     * @var PageMaxRepository
-     */
-    protected $pageMaxRepository;
-
-    /**
-     * @var ProductReviewRepository
-     */
-    protected $productReviewRepository;
-
-    /**
-     * @var ProductReviewConfigRepository
-     */
-    protected $productReviewConfigRepository;
-
-    /** @var CsvExportService */
-    protected $csvExportService;
-
-    /**
      * ProductReviewController constructor.
-     *
-     * @param PageMaxRepository $pageMaxRepository
-     * @param ProductReviewRepository $productReviewRepository
-     * @param ProductReviewConfigRepository $productReviewConfigRepository
-     * @param CsvExportService $csvExportService
      */
     public function __construct(
-        PageMaxRepository $pageMaxRepository,
-        ProductReviewRepository $productReviewRepository,
-        ProductReviewConfigRepository $productReviewConfigRepository,
-        CsvExportService $csvExportService
-    ) {
-        $this->pageMaxRepository = $pageMaxRepository;
-        $this->productReviewRepository = $productReviewRepository;
-        $this->productReviewConfigRepository = $productReviewConfigRepository;
-        $this->csvExportService = $csvExportService;
+        protected PageMaxRepository $pageMaxRepository,
+        protected ProductReviewRepository $productReviewRepository,
+        protected ProductReviewConfigRepository $productReviewConfigRepository,
+        protected CsvExportService $csvExportService,
+        private readonly PaginatorInterface $paginator
+    )
+    {
     }
 
     /**
      * Search function.
      *
-     * @Route("/%eccube_admin_route%/product_review/", name="product_review_admin_product_review")
-     * @Route("/%eccube_admin_route%/product_review/page/{page_no}", requirements={"page_no" = "\d+"}, name="product_review_admin_product_review_page")
-     * @Template("@ProductReview42/admin/index.twig")
-     *
-     * @param Request $request
-     * @param null $page_no
-     *
-     * @return array
+     * @return array<string, mixed>
      */
-    public function index(Request $request, PaginatorInterface $paginator, $page_no = null)
+    #[Route(path: '/%eccube_admin_route%/product_review/', name: 'product_review_admin_product_review')]
+    #[Route(path: '/%eccube_admin_route%/product_review/page/{page_no}', name: 'product_review_admin_product_review_page', requirements: ['page_no' => '\d+'])]
+    #[Template(template: '@ProductReview44/admin/index.twig')]
+    public function index(Request $request, ?int $page_no = null): array
     {
         $CsvType = $this->productReviewConfigRepository
             ->get()
@@ -147,7 +118,7 @@ class ProductReviewController extends AbstractController
 
         $qb = $this->productReviewRepository->getQueryBuilderBySearchData($searchData);
 
-        $pagination = $paginator->paginate(
+        $pagination = $this->paginator->paginate(
             $qb,
             $page_no,
             $pageCount
@@ -167,18 +138,14 @@ class ProductReviewController extends AbstractController
     /**
      * 編集.
      *
-     * @Route("%eccube_admin_route%/product_review/{id}/edit", name="product_review_admin_product_review_edit")
-     * @Template("@ProductReview42/admin/edit.twig")
-     *
-     * @param Request $request
-     * @param $id
-     *
-     * @return array|RedirectResponse
+     * @return array<string, mixed>|RedirectResponse
      */
+    #[Route(path: '%eccube_admin_route%/product_review/{id}/edit', name: 'product_review_admin_product_review_edit')]
+    #[Template(template: '@ProductReview44/admin/edit.twig')]
     public function edit(Request $request, ProductReview $ProductReview)
     {
         $Product = $ProductReview->getProduct();
-        if (!$Product) {
+        if ($Product === null) {
             $this->addError('product_review.admin.product.not_found', 'admin');
 
             return $this->redirectToRoute('product_review_admin_product_review', ['resume' => 1]);
@@ -190,7 +157,7 @@ class ProductReviewController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $ProductReview = $form->getData();
             $this->entityManager->persist($ProductReview);
-            $this->entityManager->flush($ProductReview);
+            $this->entityManager->flush();
 
             log_info('Product review edit');
 
@@ -211,44 +178,33 @@ class ProductReviewController extends AbstractController
 
     /**
      * Product review delete function.
-     *
-     * @Route("%eccube_admin_route%/product_review/{id}/delete", name="product_review_admin_product_review_delete", methods={"DELETE"})
-     *
-     * @param Request $request
-     * @param int $id
-     *
-     * @return RedirectResponse
      */
-    public function delete(ProductReview $ProductReview)
+    #[Route(path: '%eccube_admin_route%/product_review/{id}/delete', name: 'product_review_admin_product_review_delete', methods: ['DELETE'])]
+    public function delete(ProductReview $ProductReview): RedirectResponse
     {
         $this->isTokenValid();
 
         $this->entityManager->remove($ProductReview);
-        $this->entityManager->flush($ProductReview);
+        $this->entityManager->flush();
         $this->addSuccess('product_review.admin.delete.complete', 'admin');
 
         log_info('Product review delete', ['id' => $ProductReview->getId()]);
 
-        return $this->redirect($this->generateUrl('product_review_admin_product_review_page', ['resume' => 1]));
+        return $this->redirectToRoute('product_review_admin_product_review_page', ['resume' => 1]);
     }
 
     /**
      * 商品レビューCSVの出力.
-     *
-     * @Route("%eccube_admin_route%/product_review/download", name="product_review_admin_product_review_download")
-     *
-     * @param Request $request
-     *
-     * @return StreamedResponse
      */
-    public function download(Request $request)
+    #[Route(path: '%eccube_admin_route%/product_review/download', name: 'product_review_admin_product_review_download')]
+    public function download(Request $request): StreamedResponse
     {
         // タイムアウトを無効にする.
         set_time_limit(0);
 
         // sql loggerを無効にする.
         $em = $this->entityManager;
-        $em->getConfiguration()->setSQLLogger(null);
+        $em->getConfiguration()->setSQLLogger();
         $response = new StreamedResponse();
         $response->setCallback(function () use ($request) {
             /** @var ProductReviewConfig $Config */
@@ -270,7 +226,7 @@ class ProductReviewController extends AbstractController
             $session = $request->getSession();
             $searchForm = $this->createForm(ProductReviewSearchType::class);
 
-            $viewData = $session->get('eccube.admin.product.search', []);
+            $viewData = $session->get('product_review.admin.product_review.search', []);
             $searchData = FormUtil::submitAndGetData($searchForm, $viewData);
 
             $qb = $repo->getQueryBuilderBySearchData($searchData);

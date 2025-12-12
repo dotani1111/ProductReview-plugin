@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of EC-CUBE
  *
@@ -11,26 +13,25 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Tests\Web;
+namespace Plugin\ProductReview44\Tests\Web;
 
 use Eccube\Tests\Web\Admin\AbstractAdminWebTestCase;
 use Faker\Generator;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpKernel\Client;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class ProductReviewConfigControllerTest.
  */
-class ProductReviewConfigControllerTest extends AbstractAdminWebTestCase
+final class ProductReviewConfigControllerTest extends AbstractAdminWebTestCase
 {
-    /**
-     * @var Generator
-     */
-    protected $faker;
+    protected ?Generator $faker = null;
 
     /**
      * Setup method.
      */
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -40,16 +41,16 @@ class ProductReviewConfigControllerTest extends AbstractAdminWebTestCase
     /**
      * Config routing.
      */
-    public function testRouting()
+    public function testRouting(): void
     {
         /**
-         * @var Client
+         * @var KernelBrowser
          */
         $client = $this->client;
         /**
          * @var Crawler
          */
-        $crawler = $this->client->request('GET', $this->generateUrl('product_review42_admin_config'));
+        $crawler = $this->client->request(Request::METHOD_GET, $this->generateUrl('product_review44_admin_config'));
 
         $this->assertTrue($client->getResponse()->isSuccessful());
 
@@ -61,79 +62,79 @@ class ProductReviewConfigControllerTest extends AbstractAdminWebTestCase
     /**
      * Config submit.
      */
-    public function testMin()
+    public function testMin(): void
     {
         $min = $this->eccubeConfig['product_review_display_count_min'];
         /**
-         * @var Client
+         * @var KernelBrowser
          */
         $client = $this->client;
         /**
          * @var Crawler
          */
-        $crawler = $this->client->request('GET', $this->generateUrl('product_review42_admin_config'));
+        $crawler = $this->client->request(Request::METHOD_GET, $this->generateUrl('product_review44_admin_config'));
 
         $this->assertTrue($client->getResponse()->isSuccessful());
 
         $form = $crawler->selectButton('登録')->form();
 
-        $form['product_review_config[review_max]'] = $this->faker->numberBetween(-10, $min - 1);
+        $form['product_review_config[review_max]'] = (string) $this->faker->numberBetween(-10, $min - 1);
         $crawler = $client->submit($form);
 
-        $this->assertStringContainsString($min.'以上', $crawler->html());
+        $this->assertStringContainsString($min.'以上', (string) $crawler->html());
     }
 
     /**
      * Config submit.
      */
-    public function testMax()
+    public function testMax(): void
     {
         $max = $this->eccubeConfig['product_review_display_count_max'];
         /**
-         * @var Client
+         * @var KernelBrowser
          */
         $client = $this->client;
         /**
          * @var Crawler
          */
-        $crawler = $this->client->request('GET', $this->generateUrl('product_review42_admin_config'));
+        $crawler = $this->client->request(Request::METHOD_GET, $this->generateUrl('product_review44_admin_config'));
 
         $this->assertTrue($client->getResponse()->isSuccessful());
 
         $form = $crawler->selectButton('登録')->form();
 
-        $form['product_review_config[review_max]'] = $this->faker->numberBetween($max + 1, 100);
+        $form['product_review_config[review_max]'] = (string) $this->faker->numberBetween($max + 1, 100);
         $crawler = $client->submit($form);
 
-        $this->assertStringContainsString($max.'以下でなければなりません。', $crawler->html());
+        $this->assertStringContainsString($max.'以下でなければなりません。', (string) $crawler->html());
     }
 
     /**
      * Config submit.
      */
-    public function testSuccess()
+    public function testSuccess(): void
     {
         $min = $this->eccubeConfig['product_review_display_count_min'];
         $max = $this->eccubeConfig['product_review_display_count_max'];
         /**
-         * @var Client
+         * @var KernelBrowser
          */
         $client = $this->client;
         /**
          * @var Crawler
          */
-        $crawler = $this->client->request('GET', $this->generateUrl('product_review42_admin_config'));
+        $crawler = $this->client->request(Request::METHOD_GET, $this->generateUrl('product_review44_admin_config'));
 
         $this->assertTrue($client->getResponse()->isSuccessful());
 
         $form = $crawler->selectButton('登録')->form();
 
-        $form['product_review_config[review_max]'] = $this->faker->numberBetween($min, $max);
+        $form['product_review_config[review_max]'] = (string) $this->faker->numberBetween($min, $max);
         $crawler = $client->submit($form);
 
-        $this->assertTrue($client->getResponse()->isRedirection($this->generateUrl('product_review42_admin_config')));
+        $this->assertTrue($client->getResponse()->isRedirect($this->generateUrl('product_review44_admin_config')));
 
         $crawler = $client->followRedirect();
-        $this->assertStringContainsString('登録しました。', $crawler->html());
+        $this->assertStringContainsString('登録しました。', (string) $crawler->html());
     }
 }
