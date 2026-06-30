@@ -120,8 +120,10 @@ class ProductReviewRepository extends AbstractRepository
 
     /**
      * Get Avg and count.
+     *
+     * @return array<string, mixed>
      */
-    public function getAvgAll(Product $Product): mixed
+    public function getAvgAll(Product $Product): array
     {
         $defaults = [
             'recommend_avg' => 0,

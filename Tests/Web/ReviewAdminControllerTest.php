@@ -174,10 +174,9 @@ final class ReviewAdminControllerTest extends AbstractAdminWebTestCase
         // Check entity
         $this->expected = $fakeTitle;
         $Review = $this->productReviewRepo->find($reviewId);
-        if ($Review !== null) {
-            $this->actual = $Review->getTitle();
-            $this->verify();
-        }
+        self::assertNotNull($Review);
+        $this->actual = $Review->getTitle();
+        $this->verify();
 
         // Stay in edit page
         $this->assertStringContainsString('レビュー管理', $crawler->html());
