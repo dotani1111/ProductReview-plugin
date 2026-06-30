@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        eccube_version: [ '4.3-symfony7' ]
+        eccube_version: [ '4.4' ]
         php: [ '8.2', '8.3', '8.4', '8.5' ]
         db: [ 'mysql', 'pgsql' ]
         plugin_code: [ 'ProductReview44' ]
