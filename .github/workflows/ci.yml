@@ -74,11 +74,12 @@ jobs:
           PGPASSWORD=password psql -h 127.0.0.1 -U postgres -c 'SELECT VERSION()'
 
       - name: Setup PHP
-        uses: nanasess/setup-php@master
+        uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          ## symfony/cache 7.4 が ext-redis >=6.1 を要求するため、ランナー同梱の古い redis に依存せず明示インストールする
-          extensions: redis
+          github-token: ''
+          ## 本体 4.4 (unit-test.yml) と同じ setup。redis は symfony/cache 7.4 が要求する >=6.1 が入る
+          extensions: :xdebug, redis
 
       - name: Archive Plugin
         env:
