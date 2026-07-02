@@ -77,6 +77,8 @@ jobs:
         uses: nanasess/setup-php@master
         with:
           php-version: ${{ matrix.php }}
+          ## symfony/cache 7.4 が ext-redis >=6.1 を要求するため、ランナー同梱の古い redis に依存せず明示インストールする
+          extensions: redis
 
       - name: Archive Plugin
         env:
