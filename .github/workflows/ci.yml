@@ -133,6 +133,26 @@ jobs:
           bin/console eccube:plugin:install --code=${PLUGIN_CODE} --path=${GITHUB_WORKSPACE}/${PLUGIN_CODE}.tar.gz
           bin/console cache:clear --no-warmup
           bin/console eccube:plugin:enable --code=${PLUGIN_CODE}
+      - name: Diagnose plugin routes (temporary)
+        env:
+          APP_ENV: 'test'
+          APP_DEBUG: 0
+          DATABASE_URL: ${{ matrix.database_url }}
+          DATABASE_SERVER_VERSION: ${{ matrix.database_server_version }}
+          DATABASE_CHARSET: ${{ matrix.database_charset }}
+          PLUGIN_CODE: ${{ matrix.plugin_code }}
+        working-directory: 'ec-cube'
+        run: |
+          echo "=== dtb_plugin state ==="
+          bin/console dbal:run-sql "SELECT code, enabled FROM dtb_plugin" || echo "(dbal:run-sql failed)"
+          echo "=== rebuild container 6x, count plugin routes each time ==="
+          for i in 1 2 3 4 5 6; do
+            bin/console cache:clear --no-warmup >/dev/null 2>&1
+            bin/console cache:warmup >/dev/null 2>&1
+            routes=$(bin/console debug:router 2>/dev/null | grep -c product_review)
+            enabled=$(bin/console debug:container --parameter=eccube.plugins.enabled 2>/dev/null | grep -i productreview | head -1)
+            echo "attempt $i: product_review_routes=$routes enabled_param=[$enabled]"
+          done
       - name: Run PHPUnit
         env:
           APP_ENV: 'test'
