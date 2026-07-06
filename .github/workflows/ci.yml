@@ -14,6 +14,11 @@ on:
     paths:
       - '**'
       - '!*.md'
+
+# GITHUB_TOKEN は最小権限（読み取りのみ）にする
+permissions:
+  contents: read
+
 jobs:
   run-on-linux:
     name: Run on Linux
@@ -23,81 +28,66 @@ jobs:
       matrix:
         eccube_version: [ '4.4' ]
         php: [ '8.2', '8.3', '8.4', '8.5' ]
-        db: [ 'mysql', 'pgsql' ]
+        db: [ 'mysql8', 'pgsql' ]
         plugin_code: [ 'ProductReview44' ]
         include:
-          ## database_version: setup アクションでインストールするバージョン
-          ## database_server_version: Doctrine の server_version 設定値
-          - db: mysql
-            database_url: mysql://root:password@127.0.0.1:3306/eccube_db
-            database_version: '8.4'
+          - db: mysql8
+            database_url: mysql://root:password@127.0.0.1:3308/eccube_db
             database_server_version: 8
             database_charset: utf8mb4
           - db: pgsql
             database_url: postgres://postgres:password@127.0.0.1:5432/eccube_db
-            database_version: '16'
-            database_server_version: 16
+            database_server_version: 14
             database_charset: utf8
-
+    services:
+      mysql8:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3308:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mailcatcher:
+        image: schickling/mailcatcher
+        ports:
+          - 1080:1080
+          - 1025:1025
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      ## Docker Hub からの pull はタイムアウトで CI が不安定になるため、
-      ## DB はコンテナではなく setup アクション (apt/同梱版) でインストールする
-      - name: Setup MySQL
-        if: matrix.db == 'mysql'
-        uses: ankane/setup-mysql@v1
+        uses: actions/checkout@v4
         with:
-          mysql-version: ${{ matrix.database_version }}
-      - name: Configure MySQL
-        if: matrix.db == 'mysql'
-        run: |
-          for _ in $(seq 1 30); do mysqladmin ping -h 127.0.0.1 --silent && break; sleep 1; done
-          mysqladmin ping -h 127.0.0.1 --silent || { echo 'MySQL did not become ready within 30s'; exit 1; }
-          ## DATABASE_URL は TCP(127.0.0.1) 接続のため、TCP 経路でアクセスする root@'%' にも認証情報を設定する
-          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'password'; CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED WITH caching_sha2_password BY 'password'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
-          mysql -h 127.0.0.1 -P 3306 -u root -ppassword -e 'SELECT VERSION()'
-
-      - name: Setup PostgreSQL
-        if: matrix.db == 'pgsql'
-        uses: ankane/setup-postgres@v1
-        with:
-          postgres-version: ${{ matrix.database_version }}
-          user: postgres
-      - name: Configure PostgreSQL
-        if: matrix.db == 'pgsql'
-        run: |
-          for _ in $(seq 1 30); do pg_isready -h 127.0.0.1 && break; sleep 1; done
-          pg_isready -h 127.0.0.1 || { echo 'PostgreSQL did not become ready within 30s'; exit 1; }
-          psql -h 127.0.0.1 -U postgres -c "ALTER USER postgres PASSWORD 'password'"
-          PGPASSWORD=password psql -h 127.0.0.1 -U postgres -c 'SELECT VERSION()'
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: nanasess/setup-php@master
         with:
           php-version: ${{ matrix.php }}
-          github-token: ''
-          ## 本体 4.4 (unit-test.yml) と同じ setup。redis は symfony/cache 7.4 が要求する >=6.1 が入る
-          extensions: :xdebug, redis
-
       - name: Archive Plugin
         env:
           PLUGIN_CODE: ${{ matrix.plugin_code }}
         run: |
           tar cvzf ${GITHUB_WORKSPACE}/${PLUGIN_CODE}.tar.gz ./*
-
       - name: Checkout EC-CUBE
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: 'EC-CUBE/ec-cube'
           ref: ${{ matrix.eccube_version }}
           path: 'ec-cube'
+          persist-credentials: false
 
       - name: Get Composer Cache Directory
         id: composer-cache
         run: |
-          echo "::set-output name=dir::$(composer config cache-files-dir)"
+          echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
@@ -106,7 +96,9 @@ jobs:
             ${{ runner.os }}-composer-
       - name: Install to composer
         working-directory: 'ec-cube'
-        run: composer install --no-interaction -o --apcu-autoloader
+        # Symfony 7.4 の symfony/cache が ext-redis <6.1 と衝突するが、ランナーには
+        # 古い php-redis が入っている。本プラグイン/本体テストは redis 未使用のため無視する。
+        run: composer install --no-interaction -o --apcu-autoloader --ignore-platform-req=ext-redis
 
       - name: Setup EC-CUBE
         env:
@@ -131,28 +123,10 @@ jobs:
         working-directory: 'ec-cube'
         run: |
           bin/console eccube:plugin:install --code=${PLUGIN_CODE} --path=${GITHUB_WORKSPACE}/${PLUGIN_CODE}.tar.gz
+          ## enable は ProductReviewConfig エンティティを参照するため、install 後に
+          ## cache:clear でマッピングを登録してから enable する（順序を入れ替えると MappingException）
           bin/console cache:clear --no-warmup
           bin/console eccube:plugin:enable --code=${PLUGIN_CODE}
-      - name: Diagnose plugin routes (temporary)
-        env:
-          APP_ENV: 'test'
-          APP_DEBUG: 0
-          DATABASE_URL: ${{ matrix.database_url }}
-          DATABASE_SERVER_VERSION: ${{ matrix.database_server_version }}
-          DATABASE_CHARSET: ${{ matrix.database_charset }}
-          PLUGIN_CODE: ${{ matrix.plugin_code }}
-        working-directory: 'ec-cube'
-        run: |
-          echo "=== dtb_plugin state ==="
-          bin/console dbal:run-sql "SELECT code, enabled FROM dtb_plugin" || echo "(dbal:run-sql failed)"
-          echo "=== rebuild container 6x, count plugin routes each time ==="
-          for i in 1 2 3 4 5 6; do
-            bin/console cache:clear --no-warmup >/dev/null 2>&1
-            bin/console cache:warmup >/dev/null 2>&1
-            routes=$(bin/console debug:router 2>/dev/null | grep -c product_review)
-            enabled=$(bin/console debug:container --parameter=eccube.plugins.enabled 2>/dev/null | grep -i productreview | head -1)
-            echo "attempt $i: product_review_routes=$routes enabled_param=[$enabled]"
-          done
       - name: Run PHPUnit
         env:
           APP_ENV: 'test'
@@ -163,12 +137,12 @@ jobs:
           PLUGIN_CODE: ${{ matrix.plugin_code }}
         working-directory: 'ec-cube'
         run: |
-          ## 有効化したプラグインのルーティングはコンテナのコンパイル時に確定する。
-          ## phpunit プロセスの遅延コンパイルに任せると DB/タイミングで有効プラグイン一覧を
-          ## 取りこぼし RouteNotFound になることがあるため、クリーンなプロセスで warmup して確定させる。
+          # 有効化したプラグインのルーティングはコンテナのコンパイル時に確定する。
+          # phpunit プロセスでの遅延コンパイルに任せると DB/タイミングで有効プラグイン一覧を
+          # 取りこぼし RouteNotFound になることがあるため、クリーンなプロセスで warmup して確定させる。
           bin/console cache:clear --no-warmup
           bin/console cache:warmup
-          vendor/bin/phpunit -c app/Plugin/${PLUGIN_CODE}/phpunit.xml.dist app/Plugin/${PLUGIN_CODE}/Tests
+          ./vendor/bin/phpunit -c app/Plugin/${PLUGIN_CODE}/phpunit.xml.dist app/Plugin/${PLUGIN_CODE}/Tests
 
       - name: Disable Plugin
         working-directory: 'ec-cube'
