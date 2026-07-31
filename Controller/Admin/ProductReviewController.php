@@ -19,7 +19,6 @@ use Eccube\Service\CsvExportService;
 use Eccube\Util\FormUtil;
 use Knp\Component\Pager\PaginatorInterface;
 use Plugin\ProductReview44\Entity\ProductReview;
-use Plugin\ProductReview44\Entity\ProductReviewConfig;
 use Plugin\ProductReview44\Form\Type\Admin\ProductReviewSearchType;
 use Plugin\ProductReview44\Form\Type\Admin\ProductReviewType;
 use Plugin\ProductReview44\Repository\ProductReviewConfigRepository;
@@ -28,6 +27,7 @@ use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -58,9 +58,14 @@ class ProductReviewController extends AbstractController
     #[Template(template: '@ProductReview44/admin/index.twig')]
     public function index(Request $request, ?int $page_no = null): array
     {
+        // CSV出力項目設定が無い場合はCSV関連のボタンを表示しない. 画面からは理由が分からないためログに残す.
         $CsvType = $this->productReviewConfigRepository
             ->get()
-            ->getCsvType();
+            ?->getCsvType();
+        if (null === $CsvType) {
+            log_error('商品レビューのCSV出力項目設定が見つかりません');
+        }
+
         $builder = $this->formFactory->createBuilder(ProductReviewSearchType::class);
         $searchForm = $builder->getForm();
 
@@ -199,18 +204,27 @@ class ProductReviewController extends AbstractController
     #[Route(path: '%eccube_admin_route%/product_review/download', name: 'product_review_admin_product_review_download')]
     public function download(Request $request): StreamedResponse
     {
+        // CSV出力項目設定が無いと出力対象を決定できない.
+        // プラグイン設定そのものが無い場合と, plg_product_review_config.csv_type_id が NULL の場合がある.
+        $csvType = $this->productReviewConfigRepository->get()?->getCsvType();
+        if (null === $csvType) {
+            log_error('商品レビューのCSV出力項目設定が見つかりません');
+
+            throw new NotFoundHttpException('CsvType for product review is not configured.');
+        }
+
         // タイムアウトを無効にする.
         set_time_limit(0);
 
-        // sql loggerを無効にする.
-        $em = $this->entityManager;
-        $em->getConfiguration()->setSQLLogger();
-        $response = new StreamedResponse();
-        $response->setCallback(function () use ($request) {
-            /** @var ProductReviewConfig $Config */
-            $Config = $this->productReviewConfigRepository->get();
-            $csvType = $Config->getCsvType();
+        // StreamedResponse のコールバックはヘッダ送出後に実行されるため, その中でセッションを参照すると
+        // 出力バッファの状態次第で session_start() が失敗し, 出力済みのCSVに例外画面のHTMLが混入する.
+        // 検索条件の復元は出力開始前に済ませる.
+        $viewData = $request->getSession()->get('product_review.admin.product_review.search', []);
+        $searchForm = $this->createForm(ProductReviewSearchType::class);
+        $searchData = FormUtil::submitAndGetData($searchForm, $viewData);
 
+        $response = new StreamedResponse();
+        $response->setCallback(function () use ($csvType, $searchData) {
             /* @var $csvService CsvExportService */
             $csvService = $this->csvExportService;
 
@@ -222,12 +236,6 @@ class ProductReviewController extends AbstractController
 
             // ヘッダ行の出力.
             $csvService->exportHeader();
-
-            $session = $request->getSession();
-            $searchForm = $this->createForm(ProductReviewSearchType::class);
-
-            $viewData = $session->get('product_review.admin.product_review.search', []);
-            $searchData = FormUtil::submitAndGetData($searchForm, $viewData);
 
             $qb = $repo->getQueryBuilderBySearchData($searchData);
 
