@@ -145,7 +145,7 @@ final class ReviewControllerTest extends AbstractWebTestCase
             $this->generateUrl('product_detail', ['id' => $productId])
         );
 
-        $this->client->getResponse()->getStatusCode();
+        $this->assertTrue($this->client->getResponse()->isSuccessful());
 
         // review area
         $this->assertStringContainsString('id="product_review_area"', $crawler->html());
