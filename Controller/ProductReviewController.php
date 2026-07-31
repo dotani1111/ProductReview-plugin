@@ -65,7 +65,7 @@ class ProductReviewController extends AbstractController
                 case 'confirm':
                     log_info('Product review config confirm');
 
-                    return $this->render('@ProductReview44/default/confirm.twig', [
+                    return $this->render('ProductReview44/Resource/template/default/confirm.twig', [
                         'form' => $form->createView(),
                         'Product' => $Product,
                         'ProductReview' => $ProductReview,
@@ -101,7 +101,7 @@ class ProductReviewController extends AbstractController
             }
         }
 
-        return $this->render('@ProductReview44/default/index.twig', [
+        return $this->render('ProductReview44/Resource/template/default/index.twig', [
             'Product' => $Product,
             'ProductReview' => $ProductReview,
             'form' => $form->createView(),
@@ -114,7 +114,7 @@ class ProductReviewController extends AbstractController
      * @return array<string, mixed>
      */
     #[Route(path: '/product_review/{id}/complete', name: 'product_review_complete', requirements: ['id' => '\d+'])]
-    #[Template(template: '@ProductReview44/default/complete.twig')]
+    #[Template(template: 'ProductReview44/Resource/template/default/complete.twig')]
     public function complete(int $id): array
     {
         return ['id' => $id];
