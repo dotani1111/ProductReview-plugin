@@ -109,7 +109,7 @@ final class ReviewAdminControllerTest extends AbstractAdminWebTestCase
         );
         $this->assertTrue($this->client->getResponse()->isRedirection());
 
-        $this->assertNotInstanceOf(ProductReview::class, $this->productReviewRepo->find($productReviewId));
+        $this->assertNull($this->productReviewRepo->find($productReviewId));
     }
 
     /**
@@ -180,6 +180,31 @@ final class ReviewAdminControllerTest extends AbstractAdminWebTestCase
 
         // Stay in edit page
         $this->assertStringContainsString('レビュー管理', $crawler->html());
+    }
+
+    /**
+     * Test edit.
+     *
+     * 空白のみの入力は TrimListener で空文字になり、必須項目の setter へ null が渡る.
+     * データマッピングはバリデーションより前に行われるため、setter が null を受け付けないと
+     * NotBlank のエラー表示に到達せず TypeError になる.
+     */
+    public function testReviewEditWithBlankOnlyRequiredValue(): void
+    {
+        $Review = $this->createProductReviewData();
+
+        $crawler = $this->client->request(
+            Request::METHOD_GET,
+            $this->generateUrl('product_review_admin_product_review_edit', ['id' => $Review->getId()])
+        );
+        $form = $crawler->selectButton('登録')->form();
+        $form['product_review[reviewer_name]'] = '   ';
+        $form['product_review[title]'] = '   ';
+        $form['product_review[comment]'] = '   ';
+        $crawler = $this->client->submit($form);
+
+        $this->assertTrue($this->client->getResponse()->isSuccessful());
+        $this->assertStringContainsString('入力されていません。', $crawler->html());
     }
 
     /**

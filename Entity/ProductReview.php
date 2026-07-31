@@ -31,7 +31,6 @@ class ProductReview extends AbstractEntity
     #[ORM\Column(name: 'id', type: Types::INTEGER, options: ['unsigned' => true])]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
-    /** @phpstan-ignore-next-line */
     private ?int $id = null;
 
     #[ORM\Column(name: 'reviewer_name', type: Types::STRING)]
@@ -96,7 +95,7 @@ class ProductReview extends AbstractEntity
     /**
      * Set reviewer_name.
      */
-    public function setReviewerName(string $reviewer_name): ProductReview
+    public function setReviewerName(?string $reviewer_name): ProductReview
     {
         $this->reviewer_name = $reviewer_name;
 
@@ -132,7 +131,7 @@ class ProductReview extends AbstractEntity
     /**
      * Set recommend_level.
      */
-    public function setRecommendLevel(int $recommend_level): ProductReview
+    public function setRecommendLevel(?int $recommend_level): ProductReview
     {
         $this->recommend_level = $recommend_level;
 
@@ -168,7 +167,7 @@ class ProductReview extends AbstractEntity
     /**
      * Set title.
      */
-    public function setTitle(string $title): ProductReview
+    public function setTitle(?string $title): ProductReview
     {
         $this->title = $title;
 
@@ -186,7 +185,7 @@ class ProductReview extends AbstractEntity
     /**
      * Set comment.
      */
-    public function setComment(string $comment): ProductReview
+    public function setComment(?string $comment): ProductReview
     {
         $this->comment = $comment;
 
