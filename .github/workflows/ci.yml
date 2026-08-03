@@ -142,6 +142,10 @@ jobs:
           # 取りこぼし RouteNotFound になることがあるため、クリーンなプロセスで warmup して確定させる。
           bin/console cache:clear --no-warmup
           bin/console cache:warmup
+          # 有効プラグインのルートがコンテナに載っていることを確認する。
+          # EccubeExtension::configurePlugins() はビルド時の DB 接続に失敗すると
+          # 全プラグインを無効とみなして正常終了するため、warmup の成否では検知できない。
+          bin/console debug:router | grep -q product_review_index
           ./vendor/bin/phpunit -c app/Plugin/${PLUGIN_CODE}/phpunit.xml.dist app/Plugin/${PLUGIN_CODE}/Tests
 
       - name: Disable Plugin
