@@ -1,0 +1,3 @@
+# 静的解析・テストツールのキャッシュ
+.php-cs-fixer.cache
+.phpunit.result.cache

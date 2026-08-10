@@ -1,0 +1,17 @@
+parameters:
+    level: 6
+    paths:
+        - .
+    excludePaths:
+        - Resource/*
+        - Tests/bootstrap.php
+    doctrine:
+        objectManagerLoader: ../../../tests/object-manager.php
+    ignoreErrors:
+        # Entity のプロパティは ?type = null にしているが、該当カラムは DB 上 not-null。
+        # Symfony のフォームはバリデーションの前にデータマッピングを行い、空文字は empty_data で
+        # null になるため、非 nullable にすると保存時に TypeError で 500 になる。
+        # 実行時は Doctrine が必ず値を入れるため実害はなく、本体コアの Entity も同じ形。
+        -
+            message: '#type mapping mismatch: property can contain .+ but database expects .+#'
+            identifier: doctrine.columnType

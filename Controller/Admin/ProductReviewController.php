@@ -43,9 +43,8 @@ class ProductReviewController extends AbstractController
         protected ProductReviewRepository $productReviewRepository,
         protected ProductReviewConfigRepository $productReviewConfigRepository,
         protected CsvExportService $csvExportService,
-        private readonly PaginatorInterface $paginator
-    )
-    {
+        private readonly PaginatorInterface $paginator,
+    ) {
     }
 
     /**
