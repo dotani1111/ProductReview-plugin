@@ -11,26 +11,26 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Entity;
+namespace Plugin\ProductReview44\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Eccube\Entity\Master\AbstractMasterEntity;
+use Plugin\ProductReview44\Repository\ProductReviewStatusRepository;
 
 /**
  * ProductReviewStatus
- *
- * @ORM\Table(name="plg_product_review_status")
- * @ORM\Entity(repositoryClass="Plugin\ProductReview42\Repository\ProductReviewStatusRepository")
  */
+#[ORM\Table(name: 'plg_product_review_status')]
+#[ORM\Entity(repositoryClass: ProductReviewStatusRepository::class)]
 class ProductReviewStatus extends AbstractMasterEntity
 {
     /**
      * 表示
      */
-    const SHOW = 1;
+    public const SHOW = 1;
 
     /**
      * 非表示
      */
-    const HIDE = 2;
+    public const HIDE = 2;
 }

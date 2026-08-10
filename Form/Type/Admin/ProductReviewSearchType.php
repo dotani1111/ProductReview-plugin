@@ -11,11 +11,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Form\Type\Admin;
+namespace Plugin\ProductReview44\Form\Type\Admin;
 
 use Eccube\Common\EccubeConfig;
 use Eccube\Form\Type\Master\SexType;
-use Plugin\ProductReview42\Entity\ProductReviewStatus;
+use Plugin\ProductReview44\Entity\ProductReviewStatus;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -31,26 +31,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProductReviewSearchType extends AbstractType
 {
     /**
-     * @var EccubeConfig
-     */
-    protected $eccubeConfig;
-
-    /**
      * ProductReviewSearchType constructor.
-     *
-     * @param EccubeConfig $eccubeConfig
      */
-    public function __construct(EccubeConfig $eccubeConfig)
+    public function __construct(protected EccubeConfig $eccubeConfig)
     {
-        $this->eccubeConfig = $eccubeConfig;
     }
 
     /**
      * {@inheritdoc}
      * build form method.
-     *
-     * @param FormBuilderInterface $builder
-     * @param array                $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {

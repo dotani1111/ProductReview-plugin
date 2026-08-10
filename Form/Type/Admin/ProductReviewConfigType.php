@@ -11,10 +11,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Form\Type\Admin;
+namespace Plugin\ProductReview44\Form\Type\Admin;
 
 use Eccube\Common\EccubeConfig;
-use Plugin\ProductReview42\Entity\ProductReviewConfig;
+use Plugin\ProductReview44\Entity\ProductReviewConfig;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -27,25 +27,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProductReviewConfigType extends AbstractType
 {
     /**
-     * @var EccubeConfig
-     */
-    protected $eccubeConfig;
-
-    /**
      * ProductReviewConfigType constructor.
-     *
-     * @param EccubeConfig $eccubeConfig
      */
-    public function __construct(EccubeConfig $eccubeConfig)
+    public function __construct(protected EccubeConfig $eccubeConfig)
     {
-        $this->eccubeConfig = $eccubeConfig;
     }
 
     /**
      * Build form.
-     *
-     * @param FormBuilderInterface $builder
-     * @param array                $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -63,8 +52,6 @@ class ProductReviewConfigType extends AbstractType
 
     /**
      * Config.
-     *
-     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {

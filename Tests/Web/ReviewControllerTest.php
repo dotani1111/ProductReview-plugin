@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of EC-CUBE
  *
@@ -11,68 +13,57 @@
  * file that was distributed with this source code.
  */
 
-namespace Plugin\ProductReview42\Tests\Web;
+namespace Plugin\ProductReview44\Tests\Web;
 
 use Eccube\Entity\Master\Sex;
 use Eccube\Entity\Product;
-use Eccube\Repository\Master\ProductStatusRepository;
 use Eccube\Repository\Master\SexRepository;
 use Eccube\Repository\ProductRepository;
 use Eccube\Tests\Web\AbstractWebTestCase;
 use Faker\Generator;
-use Plugin\ProductReview42\Entity\ProductReview;
-use Plugin\ProductReview42\Entity\ProductReviewStatus;
+use Plugin\ProductReview44\Entity\ProductReview;
+use Plugin\ProductReview44\Entity\ProductReviewStatus;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-
 
 /**
  * Class ReviewControllerTest front.
  */
-class ReviewControllerTest extends AbstractWebTestCase
+final class ReviewControllerTest extends AbstractWebTestCase
 {
-    /**
-     * @var Generator
-     */
-    protected $faker;
+    protected ?Generator $faker = null;
 
-    /**
-     * @var ProductRepository
-     */
-    protected $productRepo;
+    protected ?ProductRepository $productRepo = null;
 
-    /**
-     * @var SexRepository
-     */
-    protected $sexMasterRepo;
-
-    /**
-     * @var ProductStatusRepository
-     */
-    protected $productStatusRepo;
+    protected ?SexRepository $sexMasterRepo = null;
 
     /**
      * Setup method.
      */
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
         $this->faker = $this->getFaker();
         $this->deleteAllRows(['plg_product_review']);
 
-        $this->productRepo = $this->entityManager->getRepository(Product::class);
-        $this->sexMasterRepo = $this->entityManager->getRepository(Sex::class);
-        $this->productReviewRepo = $this->entityManager->getRepository(ProductReview::class);
+        /** @var ProductRepository $productRepo */
+        $productRepo = $this->entityManager->getRepository(Product::class);
+        $this->productRepo = $productRepo;
+        /** @var SexRepository $sexMasterRepo */
+        $sexMasterRepo = $this->entityManager->getRepository(Sex::class);
+        $this->sexMasterRepo = $sexMasterRepo;
     }
 
     /**
      * Add product review.
      */
-    public function testProductReviewAddConfirmComplete()
+    public function testProductReviewAddConfirmComplete(): void
     {
         $productId = 1;
         $crawler = $this->client->request(
-            'POST',
+            Request::METHOD_POST,
             $this->generateUrl('product_review_index', ['id' => $productId]),
             [
                 'product_review' => [
@@ -111,7 +102,7 @@ class ReviewControllerTest extends AbstractWebTestCase
     /**
      * Back test.
      */
-    public function testProductReviewAddConfirmBack()
+    public function testProductReviewAddConfirmBack(): void
     {
         $productId = 1;
         $inputForm = [
@@ -124,7 +115,7 @@ class ReviewControllerTest extends AbstractWebTestCase
             '_token' => 'dummy',
         ];
         $crawler = $this->client->request(
-            'POST',
+            Request::METHOD_POST,
             $this->generateUrl('product_review_index', ['id' => $productId]),
             ['product_review' => $inputForm,
                 'mode' => 'confirm',
@@ -142,19 +133,19 @@ class ReviewControllerTest extends AbstractWebTestCase
         $this->assertStringContainsString($inputForm['comment'], $html);
     }
 
-//    /**
-//     * review list.
-//     */
-    /*public function testProductReview()
+    /**
+     * review list.
+     */
+    public function testProductReview(): void
     {
         $productId = 1;
         $ProductReview = $this->createProductReviewData($productId);
         $crawler = $this->client->request(
-            'GET',
+            Request::METHOD_GET,
             $this->generateUrl('product_detail', ['id' => $productId])
         );
 
-        $codeStatus = $this->client->getResponse()->getStatusCode();
+        $this->assertTrue($this->client->getResponse()->isSuccessful());
 
         // review area
         $this->assertStringContainsString('id="product_review_area"', $crawler->html());
@@ -164,21 +155,21 @@ class ReviewControllerTest extends AbstractWebTestCase
         $this->assertStringContainsString($ProductReview->getComment(), $reviewArea->html());
 
         // review total
-        $totalNum = $reviewArea->filter('.heading02')->html();
-        $this->assertStringContainsString('1', $totalNum);
-    }*/
+        $totalNum = $reviewArea->filter('.ec-rectHeading')->html();
+        $this->assertStringContainsString('(1)', $totalNum);
+    }
 
     /**
      * review list.
      */
-    public function testProductReviewMaxNumber()
+    public function testProductReviewMaxNumber(): void
     {
         $max = 31;
         $Product = $this->createProduct();
         $productId = $Product->getId();
         $this->createProductReviewByNumber($max, $productId);
         $crawler = $this->client->request(
-            'GET',
+            Request::METHOD_GET,
             $this->generateUrl('product_detail', ['id' => $productId])
         );
 
@@ -193,11 +184,7 @@ class ReviewControllerTest extends AbstractWebTestCase
         $this->assertStringContainsString((string) $max, $totalHtml);
     }
 
-    /**
-     * @param $number
-     * @param int $productId
-     */
-    private function createProductReviewByNumber($number, $productId = 1)
+    private function createProductReviewByNumber(int $number, int $productId = 1): void
     {
         $Product = $this->productRepo->find($productId);
         if (!$Product) {
@@ -211,12 +198,8 @@ class ReviewControllerTest extends AbstractWebTestCase
 
     /**
      * Create data.
-     *
-     * @param int|Product $product
-     *
-     * @return ProductReview
      */
-    private function createProductReviewData($product = 1)
+    private function createProductReviewData(int|Product $product = 1): ProductReview
     {
         if ($product instanceof Product) {
             $Product = $product;
@@ -240,7 +223,7 @@ class ReviewControllerTest extends AbstractWebTestCase
         $Review->setCustomer($Customer);
 
         $this->entityManager->persist($Review);
-        $this->entityManager->flush($Review);
+        $this->entityManager->flush();
 
         return $Review;
     }
