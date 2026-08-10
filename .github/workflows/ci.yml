@@ -137,14 +137,10 @@ jobs:
           PLUGIN_CODE: ${{ matrix.plugin_code }}
         working-directory: 'ec-cube'
         run: |
-          # 有効化したプラグインのルーティングはコンテナのコンパイル時に確定する。
-          # phpunit プロセスでの遅延コンパイルに任せると DB/タイミングで有効プラグイン一覧を
-          # 取りこぼし RouteNotFound になることがあるため、クリーンなプロセスで warmup して確定させる。
-          bin/console cache:clear --no-warmup
+          # cache:clear は秒精度の fresh 判定で有効化前のコンテナを残すことがあるため、直接削除して warmup する
+          rm -rf var/cache/test
           bin/console cache:warmup
-          # 有効プラグインのルートがコンテナに載っていることを確認する。
-          # EccubeExtension::configurePlugins() はビルド時の DB 接続に失敗すると
-          # 全プラグインを無効とみなして正常終了するため、warmup の成否では検知できない。
+          # 有効プラグインのルートがコンテナに載っていることを確認する (warmup の成否では検知できない)
           bin/console debug:router | grep -q product_review_index
           ./vendor/bin/phpunit -c app/Plugin/${PLUGIN_CODE}/phpunit.xml.dist app/Plugin/${PLUGIN_CODE}/Tests
 
